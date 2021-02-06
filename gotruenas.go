@@ -46,6 +46,7 @@ type Client struct {
 	UserAgent string
 
 	// Services used for communicating with the API
+	PoolDatasets PoolDatasets
 
 	// Optional function called after every successful request made to the TrueNAS APIs
 	onRequestCompleted RequestCompletionCallback
@@ -123,6 +124,7 @@ func NewClient(config *Config) (*Client, error) {
 	}
 
 	c := &Client{client: http.DefaultClient, BaseURL: baseURL, UserAgent: userAgent, Config: config}
+	c.PoolDatasets = &PoolDatasetsOp{client: c}
 
 	c.headers = make(map[string]string)
 

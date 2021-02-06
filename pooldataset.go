@@ -8,11 +8,51 @@ import (
 
 const poolDatasetPath = basePath + "/pool/dataset"
 
-// PoolDataset defines model for a pool dataset.
-type PoolDataset struct{}
+type value struct {
+	Parsed   *string `json:"parsed,omitempty"`
+	RawValue *string `json:"rawvalue,omitempty"`
+	Value    *string `json:"value,omitempty"`
+	Source   *string `json:"source,omitempty"`
+}
 
-// PoolDatasetList defines model for a pool dataset.
-type PoolDatasetList struct{}
+// PoolDataset defines model for a pool dataset.
+type PoolDataset struct {
+	ID                    *string        `json:"id"`
+	Type                  *string        `json:"type"`
+	Children              *[]PoolDataset `json:"children"`
+	Name                  *string        `json:"name"`
+	Pool                  *string        `json:"pool"`
+	Encryption            *bool          `json:"encryption"`
+	EncryptionRoot        *bool          `json:"encryption_root"`
+	KeyLoaded             *bool          `json:"key_loaded"`
+	Mountpoint            *string        `json:"mountpoint"`
+	Deduplication         *value         `json:"deduplication"`
+	ACLMode               *value         `json:"aclmode"`
+	ACLType               *value         `json:"acltype"`
+	Xattr                 *value         `json:"xattr"`
+	Atime                 *value         `json:"atime"`
+	CaseSensitivity       *value         `json:"casesensitivity"`
+	Exec                  *value         `json:"exec"`
+	Sync                  *value         `json:"sync"`
+	Compression           *value         `json:"compression"`
+	CompressRatio         *value         `json:"compressratio"`
+	Origin                *value         `json:"origin"`
+	Quota                 *value         `json:"quota"`
+	RefQuota              *value         `json:"refquota"`
+	Reservation           *value         `json:"reservation"`
+	RefReservation        *value         `json:"refreservation"`
+	Copies                *value         `json:"copies"`
+	SnapDir               *value         `json:"snapdir"`
+	ReadOnly              *value         `json:"readonly"`
+	RecordSize            *value         `json:"recordsize"`
+	KeyFormat             *value         `json:"key_format"`
+	EncryptionAlgorithm   *value         `json:"encryption_algorithm"`
+	Used                  *value         `json:"used"`
+	Available             *value         `json:"available"`
+	SpecialSmallBlockSize *value         `json:"special_small_block_size"`
+	Pbkdf2iters           *value         `json:"pbkdf2iters"`
+	Locked                *bool          `json:"locked"`
+}
 
 // PoolDatasetCreate defines model for creating a pool dataset.
 type PoolDatasetCreate struct {
@@ -58,14 +98,23 @@ type PoolDatasetCreate struct {
 	} `json:"encryption_options,omitempty"`
 }
 
-// PoolDatasetOp handles communication with the Pool Dataset related methods of the
+// PoolDatasetsOp handles communication with the Pool Dataset related methods of the
 // TrueNAS REST API
-type PoolDatasetOp struct {
+type PoolDatasetsOp struct {
 	client *Client
 }
 
+// PoolDatasets is an interface for interacting with
+// Pool Datasets
+type PoolDatasets interface {
+	Create(ctx context.Context, body PoolDatasetCreate) (*PoolDataset, *http.Response, error)
+	Delete(ctx context.Context, id string) (*http.Response, error)
+	Get(ctx context.Context, id string) (*PoolDataset, *http.Response, error)
+	List(ctx context.Context, opt *ListOptions) (*[]PoolDataset, *http.Response, error)
+}
+
 // Create a new activation key
-func (s *PoolDatasetOp) Create(ctx context.Context, body PoolDatasetCreate) (*PoolDataset, *http.Response, error) {
+func (s *PoolDatasetsOp) Create(ctx context.Context, body PoolDatasetCreate) (*PoolDataset, *http.Response, error) {
 	path := poolDatasetPath
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, body)
@@ -83,8 +132,8 @@ func (s *PoolDatasetOp) Create(ctx context.Context, body PoolDatasetCreate) (*Po
 }
 
 // Delete an activation key by its ID
-func (s *PoolDatasetOp) Delete(ctx context.Context, id int) (*http.Response, error) {
-	path := fmt.Sprintf("%s/id/%d", poolDatasetPath, id)
+func (s *PoolDatasetsOp) Delete(ctx context.Context, id string) (*http.Response, error) {
+	path := fmt.Sprintf("%s/id/%s", poolDatasetPath, id)
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -99,8 +148,8 @@ func (s *PoolDatasetOp) Delete(ctx context.Context, id int) (*http.Response, err
 }
 
 // Get a single pool dataset by its ID
-func (s *PoolDatasetOp) Get(ctx context.Context, id int) (*PoolDataset, *http.Response, error) {
-	path := fmt.Sprintf("%s/id/%d", poolDatasetPath, id)
+func (s *PoolDatasetsOp) Get(ctx context.Context, id string) (*PoolDataset, *http.Response, error) {
+	path := fmt.Sprintf("%s/id/%s", poolDatasetPath, id)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -117,7 +166,7 @@ func (s *PoolDatasetOp) Get(ctx context.Context, id int) (*PoolDataset, *http.Re
 }
 
 // List all activation keys or a filtered list of activation keys
-func (s *PoolDatasetOp) List(ctx context.Context, opt *ListOptions) (*PoolDatasetList, *http.Response, error) {
+func (s *PoolDatasetsOp) List(ctx context.Context, opt *ListOptions) (*[]PoolDataset, *http.Response, error) {
 	path := poolDatasetPath
 
 	path, err := addOptions(path, opt)
@@ -130,7 +179,7 @@ func (s *PoolDatasetOp) List(ctx context.Context, opt *ListOptions) (*PoolDatase
 		return nil, nil, err
 	}
 
-	list := new(PoolDatasetList)
+	list := new([]PoolDataset)
 	resp, err := s.client.Do(ctx, req, list)
 	if err != nil {
 		return nil, resp, err
